@@ -45,6 +45,11 @@ var totalObjects = 120;
 var totalRows = Math.ceil( totalObjects / perRow );
 // Get angle between objects
 var angle = ( 2 * Math.PI ) / perRow;
+// Current row
+var currentRow = ( totalObjects / perRow ) - 1;
+
+// Collection of covers
+var covers = new Array();
 
 for ( var i = 0; i < totalObjects; i++ ) {
     // Get objects row
@@ -76,20 +81,90 @@ for ( var i = 0; i < totalObjects; i++ ) {
     object.scale.y = 1.6;
     object.scale.z = 0.1;
 
+    // Init year array in collection
+    if ( i % perRow === 0 ) {
+        covers[ row ] = new Array();
+    }
+    // Add object to covers array
+    covers[ row ].push( object );
     // Add object to scene
     scene.add( object );
 
 }
 
 /*============= END OF MOCKUP-RELATED CODE =============*/
+
+// Animation control object
+var animator = {
+    // Current animation callback
+    active: null,
+    // Direction of current animation
+    direction: 0,
+    // Limit of current animation
+    limit: 0,
+    // Last position of current animation
+    last: 0,
+
+    execute: function() {
+        // If there is an active animation that is not past its limit, animate
+        if ( this.active && this.last < this.limit ) {
+            this.last += this.active( this.direction );
+        } else {
+            this.reset();
+        }
+    },
+
+    changeRow: function( offset ) {
+        // Set active animation callback
+        this.active = function( dir ) {
+            // Loop through all issues and animate along Y * offset (up or down)
+            _.each( covers, function( year ) {
+                _.each( year, function( issue ) {
+                    issue.position.y += 0.02 * dir;
+                } );
+            } );
+
+            return 0.02 * dir;
+        };
+        // Set direction
+        this.direction = offset;
+        // Set limit (i.e. how far to move)
+        this.limit = 4.0;
+    },
+
+    rotateRow: function( offset ) {
+        // Set active animation callback
+        this.active = function( dir ) {
+            // Loop through all issues and animate along Y * offset (up or down)
+            _.each( covers, function( year ) {
+                _.each( year, function( issue ) {
+                    issue.position.y += 0.02 * dir;
+                } );
+            } );
+
+            return 0.02 * dir;
+        };
+        // Set direction
+        this.direction = offset;
+        // Set limit (i.e. how far to move)
+        this.limit = 4.0;
+    },
+
+    reset: function() {
+        // Reset starting variables
+        this.active = null;
+        this.direction = this.limit = this.last = 0;
+    }
+}
+
 /*
 Request animation frame loop function
 */
 function animate() {
     /*
-    Apply rotation to cube mesh
+    Apply animations
     */
-    //cube.rotation.y += 0.01;
+    animator.execute();
 
     /*
     Update VR headset position and apply to camera.
@@ -116,10 +191,6 @@ document.body.addEventListener( 'dblclick', function() {
     effect.setFullScreen( true );
 });
 
-function changeRow( offset ) {
-
-}
-
 /*
 Listen for keyboard events to zero positional sensor or enter full-screen VR mode.
 */
@@ -134,9 +205,9 @@ function onkey(event) {
     } else if (event.charCode == 'f'.charCodeAt(0)) { // f
         effect.setFullScreen( true );
     } else if (event.charCode == 'w'.charCodeAt(0)) { // w
-        changeRow( 1 );
+        animator.changeRow( -1 );
     } else if (event.charCode == 's'.charCodeAt(0)) { // s
-        changeRow( 2 );
+        animator.changeRow( 11 );
     }
 };
 
