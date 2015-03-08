@@ -106,8 +106,8 @@ var animator = {
     last: 0,
 
     execute: function() {
-        // If there is an active animation that is not past its limit, animate
-        if ( this.active && this.last < this.limit ) {
+        // If there is an active animation that is not past its limit in this direction, animate
+        if ( this.active && ( ( this.last < this.limit && this.direction > 0 ) || ( this.last > this.limit * -1 && this.direction < 0 ) ) ) {
             this.last += this.active( this.direction );
         } else {
             this.reset();
@@ -115,16 +115,17 @@ var animator = {
     },
 
     changeRow: function( offset ) {
+        this.reset();
         // Set active animation callback
         this.active = function( dir ) {
             // Loop through all issues and animate along Y * offset (up or down)
             _.each( covers, function( year ) {
                 _.each( year, function( issue ) {
-                    issue.position.y += 0.02 * dir;
+                    issue.position.y += 0.2 * dir;
                 } );
             } );
 
-            return 0.02 * dir;
+            return 0.2 * dir;
         };
         // Set direction
         this.direction = offset;
@@ -132,22 +133,24 @@ var animator = {
         this.limit = 4.0;
     },
 
-    rotateRow: function( offset ) {
+    spinRow: function( offset ) {
+        this.reset();
         // Set active animation callback
         this.active = function( dir ) {
-            // Loop through all issues and animate along Y * offset (up or down)
-            _.each( covers, function( year ) {
-                _.each( year, function( issue ) {
-                    issue.position.y += 0.02 * dir;
-                } );
+            // Calculate new angle
+            var newAngle = angle + ( 0.2 * dir );
+            // Loop through all issues at this year and rotate around origin
+            _.each( covers[ currentRow ], function( issue, index ) {
+                issue.position.x += Math.cos( newAngle * ( index % perRow ) ) * 6;
+                issue.position.z += Math.sin( newAngle * ( index % perRow ) ) * 6;
             } );
 
-            return 0.02 * dir;
+            return newAngle;
         };
         // Set direction
         this.direction = offset;
-        // Set limit (i.e. how far to move)
-        this.limit = 4.0;
+        // Set limit to 30 deg
+        this.limit = Math.PI / 6;
     },
 
     reset: function() {
@@ -204,10 +207,16 @@ function onkey(event) {
         controls.zeroSensor();
     } else if (event.charCode == 'f'.charCodeAt(0)) { // f
         effect.setFullScreen( true );
-    } else if (event.charCode == 'w'.charCodeAt(0)) { // w
+    } else if (event.charCode == 'w'.charCodeAt(0)) { // w - move a row up
         animator.changeRow( -1 );
-    } else if (event.charCode == 's'.charCodeAt(0)) { // s
-        animator.changeRow( 11 );
+        currentRow -= 1;
+    } else if (event.charCode == 's'.charCodeAt(0)) { // s - move a row down
+        animator.changeRow( 1 );
+        currentRow += 1;
+    } else if (event.charCode == 'a'.charCodeAt(0)) { // a - spin row left
+        animator.spinRow( -1 );
+    } else if (event.charCode == 'd'.charCodeAt(0)) { // d - spin row right
+        animator.spinRow( 1 );
     }
 };
 
