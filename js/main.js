@@ -37,19 +37,26 @@ Create 3d objects
 */
 var geometry = new THREE.BoxGeometry( 2, 2, 2 );
 
-var material = new THREE.MeshNormalMaterial();
-
 // Number of objects to place per row
 var perRow = 12;
 // Get angle between objects
 var angle = ( 2 * Math.PI ) / perRow;
 
 for ( var i = 0; i < 120; i++ ) {
-
-    var object = new THREE.Mesh( geometry, material );
-
     // Get objects row
     var row = Math.floor( i / perRow );
+    // Calculate year based on row and index
+    var coverYear = 1994 + row;
+    var coverMonth = ( i % perRow ) + 1;
+    // Pad cover month
+    if ( coverMonth < 10 ) {
+        coverMonth = '0' + coverMonth;
+    }
+    var material = new THREE.MeshBasicMaterial( {
+        map: THREE.ImageUtils.loadTexture( '../covers/' + coverYear + '_' + coverMonth + '.jpg' )
+    } );
+
+    var object = new THREE.Mesh( geometry, material );
 
     // Set X and Z such that boxes make ring around origin
     object.position.x = Math.cos( angle * ( i % perRow ) ) * 6;
