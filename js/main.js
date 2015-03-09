@@ -96,8 +96,22 @@ for ( var i = 0; i < totalObjects; i++ ) {
 
 // Animation control object
 var animator = {
-    // Current animation callback
-    active: null,
+    // Current animation callback, default to spinning all rows
+    active: function( dir ) {
+        // Calculate new angle
+        var newAngle = angle + this.last + ( 0.02 * dir );
+        // Loop through all issues at this year and rotate around origin
+        _.each( covers, function( year, yearIndex ) {
+            _.each( year, function( issue, index ) {
+                issue.position.x = Math.cos( newAngle * ( index % perRow ) ) * 6;
+                issue.position.z = Math.sin( newAngle * ( index % perRow ) ) * 6;
+                // Compensate for position and rotate back towards origin
+                issue.rotation.y = ( Math.PI / 2 ) - ( newAngle * ( index % perRow ) );
+            } );
+        } );
+
+        return 0.02 * dir;
+    };,
     // Direction of current animation
     direction: 0,
     // Limit of current animation
@@ -116,6 +130,10 @@ var animator = {
 
     changeRow: function( offset ) {
         this.reset();
+        // Set direction
+        this.direction = offset;
+        // Set limit (i.e. how far to move)
+        this.limit = 4.0;
         // Set active animation callback
         this.active = function( dir ) {
             // Loop through all issues and animate along Y * offset (up or down)
@@ -127,30 +145,29 @@ var animator = {
 
             return 0.2 * dir;
         };
-        // Set direction
-        this.direction = offset;
-        // Set limit (i.e. how far to move)
-        this.limit = 4.0;
     },
 
     spinRow: function( offset ) {
         this.reset();
-        // Set active animation callback
-        this.active = function( dir ) {
-            // Calculate new angle
-            var newAngle = angle + ( 0.2 * dir );
-            // Loop through all issues at this year and rotate around origin
-            _.each( covers[ currentRow ], function( issue, index ) {
-                issue.position.x += Math.cos( newAngle * ( index % perRow ) ) * 6;
-                issue.position.z += Math.sin( newAngle * ( index % perRow ) ) * 6;
-            } );
-
-            return newAngle;
-        };
         // Set direction
         this.direction = offset;
         // Set limit to 30 deg
         this.limit = Math.PI / 6;
+        // Set active animation callback
+        this.active = function( dir ) {
+            // Calculate new angle
+            var newAngle = angle + this.last + ( 0.02 * dir );
+            console.log( 'rotating ' + newAngle );
+            // Loop through all issues at this year and rotate around origin
+            _.each( covers[ currentRow ], function( issue, index ) {
+                issue.position.x = Math.cos( newAngle * ( index % perRow ) ) * 6;
+                issue.position.z = Math.sin( newAngle * ( index % perRow ) ) * 6;
+                // Compensate for position and rotate back towards origin
+                issue.rotation.y = ( Math.PI / 2 ) - ( newAngle * ( index % perRow ) );
+            } );
+
+            return 0.02 * dir;
+        };
     },
 
     reset: function() {
