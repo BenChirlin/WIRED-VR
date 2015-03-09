@@ -111,7 +111,7 @@ var animator = {
         } );
 
         return 0.02 * dir;
-    };,
+    },
     // Direction of current animation
     direction: 0,
     // Limit of current animation
